@@ -49,6 +49,10 @@ def waitNextSong():
     while getNp() == currentsong:
         time.sleep(mpd_checkint)
 
+def inPlaylist(song):
+    lst = mpd_client.playlistsearch('artist', song[0], 'title', song[1])
+    return len(lst)>0
+
 def getSimilar(song):
     if (not song[0]) or (not song[1]):
         print "not enought song data"
@@ -69,6 +73,9 @@ def getSimilarAdd(song, length=2):
         if isBlacklisted(s):
             print "blacklisted: %s - %s" % s
             continue
+        if inPlaylist(s):
+            print "already in playlist: %s - %s" % s
+            continue
         files = mpd_client.search('artist', s[0], 'title', s[1])
         if files:
             ret.append((s[0], s[1], files[0]["file"]))
@@ -85,7 +92,7 @@ def loop():
         addBlacklist(getNp())
         lst = getSimilarAdd(getNp())
         for item in lst:
-            print "add %s - %s to playlist" % item[:2]
+            print u"add %s - %s to playlist" % item[:2]
             mpd_client.add(item[2])
             addBlacklist(item[:2])
 
