@@ -44,7 +44,7 @@ def LastFmToSong(track):
 def SongToLastFm(song):
     search = lastfm.search_for_track(song[0], song[1]).get_next_page()
     if len(search) == 0:
-        print "title %s - %s not found" % song
+        print u"title %s - %s not found" % song
         return False
     return search[0]
 
@@ -80,7 +80,7 @@ def getSimilar(song):
     song=encSong(song)
     search = lastfm.search_for_track(song[0], song[1]).get_next_page()
     if len(search) == 0:
-        print "title %s - %s not found" % song
+        print u"title %s - %s not found" % song
         return []
     return search[0].get_similar() 
 
@@ -88,20 +88,20 @@ def getSimilarAdd(song, length=2):
     ret = []
     similars = getSimilar(song)
     if not similars:
-        print "no similar tracks for %s - %s found" % song
+        print u"no similar tracks for %s - %s found" % song
     for si in similars:
         s = LastFmToSong(si.item)
         if isBlacklisted(s):
-            print "blacklisted: %s - %s" % s
+            print u"blacklisted: %s - %s" % s
             continue
         if inPlaylist(s):
-            print "already in playlist: %s - %s" % s
+            print u"already in playlist: %s - %s" % s
             continue
         files = mpd_client.search('artist', s[0], 'title', s[1])
         if files:
             ret.append((s[0], s[1], files[0]["file"]))
         else:
-            print "no matching files found to song %s - %s" % s
+            print u"no matching files found to song %s - %s" % s
         if len(ret) == length:
             return ret
     return ret
@@ -118,8 +118,8 @@ def newSong():
         addBlacklist(item[:2])
 
 def scrobbleSong(song):
-    ts = calendar.timegm(datetime.datetime.now().timetuple())
-    song=encSong(song)
+    ts = calendar.timegm(datetime.datetime.now().utctimetuple())
+    song = encSong(song)
     lastfm.scrobble(song[0], song[1], ts)
     print u"scrobbled %s - %s" % song
 
