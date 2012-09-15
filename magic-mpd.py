@@ -28,8 +28,8 @@ blacklist_max = 20 #only blacklist the last 50 songs
 blacklist = []
 
 def encSong(song):
-    i=unicode(song[0], errors='replace')
-    t=unicode(song[1], errors='replace')
+    i=unicode(song[0], errors='replace') if (song[0] != None) else None
+    t=unicode(song[1], errors='replace') if (song[1] != None) else None
 
     return (i,t)
 
