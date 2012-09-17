@@ -27,10 +27,14 @@ mpd_client.connect(mpd_host, mpd_port)
 blacklist_max = 20 #only blacklist the last 50 songs
 blacklist = []
 
-def encSong(song):
-    i=unicode(song[0], errors='replace') if (song[0] != None) else None
-    t=unicode(song[1], errors='replace') if (song[1] != None) else None
+def apiSong(song):
+    i=song[0].decode('utf-8').encode('utf-8') if type(song[0]) != unicode else song[0]
+    t=song[1].decode('utf-8').encode('utf-8') if type(song[1]) != unicode else song[1]
+    return (i,t)
 
+def printSong(song):
+    i=song[0].decode('utf-8') if type(song[0]) != unicode else song[0]
+    t=song[1].decode('utf-8') if type(song[1]) != unicode else song[1]
     return (i,t)
 
 def isBlacklisted(song):
@@ -39,7 +43,7 @@ def isBlacklisted(song):
 def LastFmToSong(track):
     artist = str(track.get_artist())
     title  = track.get_name()
-    return (artist, title)
+    return apiSong((artist, title))
 
 def SongToLastFm(song):
     search = lastfm.search_for_track(song[0], song[1]).get_next_page()
@@ -61,7 +65,7 @@ def getNp():
     artist  = np.get("artist")
     title   = np.get("title")
     song    = (artist, title)
-    return song
+    return apiSong(song)
 
 def waitNextSong():
     print "waiting for next title"
@@ -70,6 +74,7 @@ def waitNextSong():
         time.sleep(mpd_checkint)
 
 def inPlaylist(song):
+    #song=apiSong(song)
     lst = mpd_client.playlistsearch('artist', song[0], 'title', song[1])
     return len(lst)>0
 
@@ -77,10 +82,11 @@ def getSimilar(song):
     if (not song[0]) or (not song[1]):
         print "not enought song data"
         return []
-    song=encSong(song)
+    #song=apiSong(song)
+    print song
     search = lastfm.search_for_track(song[0], song[1]).get_next_page()
     if len(search) == 0:
-        print u"title %s - %s not found" % song
+        print u"title %s - %s not found" % printSong(song)
         return []
     return search[0].get_similar() 
 
@@ -88,20 +94,20 @@ def getSimilarAdd(song, length=2):
     ret = []
     similars = getSimilar(song)
     if not similars:
-        print u"no similar tracks for %s - %s found" % song
+        print u"no similar tracks for %s - %s found" % printSong(song)
     for si in similars:
         s = LastFmToSong(si.item)
         if isBlacklisted(s):
-            print u"blacklisted: %s - %s" % s
+            print u"blacklisted: %s - %s" % printSong(s)
             continue
         if inPlaylist(s):
-            print u"already in playlist: %s - %s" % s
+            print u"already in playlist: %s - %s" % printSong(s)
             continue
         files = mpd_client.search('artist', s[0], 'title', s[1])
         if files:
             ret.append((s[0], s[1], files[0]["file"]))
         else:
-            print u"no matching files found to song %s - %s" % s
+            print u"no matching files found to song %s - %s" % printSong(s)
         if len(ret) == length:
             return ret
     return ret
@@ -113,15 +119,18 @@ def newSong():
     scrobbleSong(song)
     lst = getSimilarAdd(song, mpd_add_count)
     for item in lst:
-        print u"add %s - %s to playlist" % item[:2]
+        song=printSong(item)
+        print "*"*10
+        print song
+        print u"add %s - %s to playlist" % printSong(song)
         mpd_client.add(item[2])
-        addBlacklist(item[:2])
+        addBlacklist(song)
 
 def scrobbleSong(song):
     ts = calendar.timegm(datetime.datetime.now().utctimetuple())
-    song = encSong(song)
+    #song = apiSong(song)
     lastfm.scrobble(song[0], song[1], ts)
-    print u"scrobbled %s - %s" % song
+    print u"scrobbled %s - %s" % printSong(song)
 
 def loop():
     while True:
